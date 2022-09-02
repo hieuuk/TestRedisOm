@@ -17,7 +17,7 @@ var actor2 = new Actor
 var movie1 = new Movie
 {
     Id = 1,
-    Title = "MI Roque",
+    Title = "Mission: Impossible - Rogue Nation",
     SingleActor = actor2,
     Actors = new List<Actor>()
     {
@@ -28,7 +28,7 @@ var movie1 = new Movie
 var movie2 = new Movie
 {
     Id = 2,
-    Title = "Vampire",
+    Title = "Interview With The Vampire",
     SingleActor = actor1,
     Actors = new List<Actor>
     {
@@ -38,31 +38,68 @@ var movie2 = new Movie
 };
 
 var provider = new RedisConnectionProvider("http://localhost:6379");
+await provider.Connection.DropIndexAsync(typeof(Movie));
 await provider.Connection.CreateIndexAsync(typeof(Movie));
 var midx = (RedisCollection<Movie>)provider.RedisCollection<Movie>();
 
-//await midx.InsertAsync(movie1);
-//await midx.InsertAsync(movie2);
+await midx.InsertAsync(movie1);
+await midx.InsertAsync(movie2);
 
+// WORKING
 //var result = await midx
 //     .Where(m => m.SingleActor.Name == "Tom")
 //     .ToListAsync();
 
+// RETURN NOTHING
 var result = await midx
-     .Where(m => m.Title.Contains("pir"))
+     .Where(m => m.SingleActor.Name.Contains("om"))
      .ToListAsync();
+
+// RETURN NOTHING
+//var result = await midx
+//     .Where(m => m.Title.Contains("Interview"))
+//     .ToListAsync();
+
+// ERROR: Syntax error at offset 19 near With
+//var result = await midx
+//     .Where(m => m.Title == "Interview With The Vampire")
+//     .ToListAsync();
+
+// RETURN NOTHING
+//var result = await midx
+//     .Where(m => m.Title == "Interview")
+//     .ToListAsync();
+
+// RETURN NOTHING
+//var result = await midx
+//     .Where(m => m.Actors.Any(a => a.Id == 1))
+//     .ToListAsync();
+
+// RETURN NOTHING
+//var result = await midx
+//     .Where(m => m.Actors.Any(a => a.Name == "Tom Cruise"))
+//     .ToListAsync();
+
+// RETURN NOTHING
+//var result = await midx
+//     .Where(m => m.Title.Contains("pir"))
+//     .ToListAsync();
+
+// RETURN NOTHING
+//var result = await midx
+//     .Where(m => m.Actors.Any(a => a.Name == "Tom"))
+//     .ToListAsync();
 
 foreach (var item in result)
 {
     Console.WriteLine($"{item.Id} - {item.Title}");
     foreach (var ma in item.Actors)
     {
-        Console.WriteLine($"actress {ma.Id} - {ma.Name}");
+        Console.WriteLine($"Actor {ma.Id} - {ma.Name}");
     }
 }
 
 Console.WriteLine("Completed");
-Console.ReadLine();
 
 [Document(StorageType = StorageType.Json, Prefixes = new string[] { "mov" }, IndexName = "midx")]
 public class Movie
@@ -73,15 +110,15 @@ public class Movie
     public string Title { get; set; }
     [Indexed(CascadeDepth = 1)]
     public Actor SingleActor { get; set; }
-    //[Indexed(JsonPath = "$.Id")]
-    //[Searchable(JsonPath = "$.Name")]
-    [Indexed(CascadeDepth = 1)]
+    [Indexed(JsonPath = "$.Id")]
+    [Searchable(JsonPath = "$.Name")]
     public List<Actor> Actors { get; set; } 
 }
 
 public class Actor
 {
     [RedisIdField]
+    [Indexed]
     public int Id { get; set; }
     [Searchable]
     public string Name { get; set; }
