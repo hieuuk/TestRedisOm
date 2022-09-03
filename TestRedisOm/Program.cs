@@ -6,18 +6,18 @@ using Redis.OM.Modeling;
 
 var actor1 = new Actor
 {
-    Id = "1",
+    Id = "a1",
     Name = "Brad Pitt"
 };
 var actor2 = new Actor
 {
-    Id = "2",
+    Id = "a2",
     Name = "Tom Cruise"
 };
 
 var movie1 = new Movie
 {
-    Id = "1",
+    Id = "m1",
     Title = "Mission: Impossible - Rogue Nation",
     SingleActor = actor2,
     Actors = new List<Actor>()
@@ -28,8 +28,8 @@ var movie1 = new Movie
 
 var movie2 = new Movie
 {
-    Id = "2",
-    Title = "Try random name",
+    Id = "m2",
+    Title = "Interview With The Vampire",
     SingleActor = actor1,
     Actors = new List<Actor>
     {
@@ -39,8 +39,8 @@ var movie2 = new Movie
 };
 
 var provider = new RedisConnectionProvider("http://localhost:6379");
-await provider.Connection.DropIndexAsync(typeof(Movie));
-await provider.Connection.CreateIndexAsync(typeof(Movie));
+//await provider.Connection.DropIndexAsync(typeof(Movie));
+//await provider.Connection.CreateIndexAsync(typeof(Movie));
 var midx = (RedisCollection<Movie>)provider.RedisCollection<Movie>();
 
 await midx.InsertAsync(movie1);
@@ -64,39 +64,35 @@ await midx.InsertAsync(movie2);
 //var result = await midx
 //     .Where(m => m.Title == "Interview")
 //     .ToListAsync();
+//WORKING
 //var aggregations = new RedisAggregationSet<Movie>(provider.Connection);
-//var result = (await aggregations.Load(x => x.RecordShell.Title).Apply(x => x.RecordShell.Title.Contains("possib"), "doesContain")
+//var result = (await aggregations.Load(x => x.RecordShell.Title).Apply(x => x.RecordShell.Title.Contains("Inter"), "doesContain")
 //    .Filter(x => x["doesContain"] == 1).LoadAll().ToListAsync()).Select(x => x.Hydrate()).ToList();
 
 // ERROR: Syntax error at offset 19 near With
 //var result = await midx
-//     .Where(m => m.Title == "Interview With The Vampire")
+//     .Where(m => m.Title == "Interview vampire")
 //     .ToListAsync();
 
-// RETURN NOTHING
+// WORKING
 //var result = await midx
 //     .Where(m => m.Title == "Interview")
 //     .ToListAsync();
 
 // WORKING
-var result = await midx
-     .Where(m => m.Actors.Any(a => a.Id == "2"))
-     .ToListAsync();
+//var result = await midx
+//     .Where(m => m.Actors.Any(a => a.Id == "a2"))
+//     .ToListAsync();
 
 // RETURN ONLY MOVIE 1
-//var result = await midx
-//     .Where(m => m.Actors.Any(a => a.Name == "Tom Cruise"))
-//     .ToListAsync();
+var result = await midx
+     .Where(m => m.Actors.Any(a => a.Name == "Tom"))
+     .ToListAsync();
 
-// RETURN NOTHING
-//var result = await midx
-//     .Where(m => m.Title.Contains("pir"))
-//     .ToListAsync();
+//var aggregations = new RedisAggregationSet<Movie>(provider.Connection);
+//var result = (await aggregations.Load(x => x.RecordShell.Actors.Name).Apply(x => x.RecordShell.SingleActor.Name.Contains("om"), "doesContain")
+//    .Filter(x => x["doesContain"] == 1).LoadAll().ToListAsync()).Select(x => x.Hydrate()).ToList();
 
-// RETURN NOTHING
-//var result = await midx
-//     .Where(m => m.Actors.Any(a => a.Name == "Tom"))
-//     .ToListAsync();
 
 foreach (var item in result)
 {
@@ -120,7 +116,7 @@ public class Movie
     [Indexed(CascadeDepth = 1)]
     public Actor SingleActor { get; set; }
     [Indexed(JsonPath = "$.Id")]
-    [Searchable(JsonPath = "$.Name")]
+    [Indexed(JsonPath = "$.Name")]
     public List<Actor> Actors { get; set; } 
 }
 
@@ -129,6 +125,6 @@ public class Actor
     [RedisIdField]
     [Indexed]
     public string Id { get; set; }
-    [Searchable(Aggregatable = true)]
+    [Searchable(Aggregatable = true, Sortable = false)]
     public string Name { get; set; }
 }
