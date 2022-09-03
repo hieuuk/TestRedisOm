@@ -1,23 +1,22 @@
 ﻿using Redis.OM;
 using Redis.OM.Searching;
-using Redis.OM.Aggregation;
 using Redis.OM.Modeling;
 
 
 var actor1 = new Actor
 {
-    Id = "1",
+    Id = 1,
     Name = "Brad Pitt"
 };
 var actor2 = new Actor
 {
-    Id = "2",
+    Id = 2,
     Name = "Tom Cruise"
 };
 
 var movie1 = new Movie
 {
-    Id = "1",
+    Id = 1,
     Title = "Mission: Impossible - Rogue Nation",
     SingleActor = actor2,
     Actors = new List<Actor>()
@@ -28,8 +27,8 @@ var movie1 = new Movie
 
 var movie2 = new Movie
 {
-    Id = "2",
-    Title = "Try random name",
+    Id = 2,
+    Title = "Interview With The Vampire",
     SingleActor = actor1,
     Actors = new List<Actor>
     {
@@ -48,25 +47,18 @@ await midx.InsertAsync(movie2);
 
 // WORKING
 //var result = await midx
-//     .Where(m => m.SingleActor.Name == "Cruise")
+//     .Where(m => m.SingleActor.Name == "Tom")
 //     .ToListAsync();
 
 // RETURN NOTHING
-//var result = await midx
-//     .Where(m => m.SingleActor.Name.Contains("om"))
-//     .ToListAsync();
-// THIS WORKING
-//var aggregations = new RedisAggregationSet<Movie>(provider.Connection);
-//var result = (await aggregations.Load(x => x.RecordShell.SingleActor.Name).Apply(x => x.RecordShell.SingleActor.Name.Contains("om"), "doesContain")
-//    .Filter(x => x["doesContain"] == 1).LoadAll().ToListAsync()).Select(x => x.Hydrate()).ToList();
+var result = await midx
+     .Where(m => m.SingleActor.Name.Contains("om"))
+     .ToListAsync();
 
 // RETURN NOTHING
 //var result = await midx
-//     .Where(m => m.Title == "Interview")
+//     .Where(m => m.Title.Contains("Interview"))
 //     .ToListAsync();
-//var aggregations = new RedisAggregationSet<Movie>(provider.Connection);
-//var result = (await aggregations.Load(x => x.RecordShell.Title).Apply(x => x.RecordShell.Title.Contains("possib"), "doesContain")
-//    .Filter(x => x["doesContain"] == 1).LoadAll().ToListAsync()).Select(x => x.Hydrate()).ToList();
 
 // ERROR: Syntax error at offset 19 near With
 //var result = await midx
@@ -78,12 +70,12 @@ await midx.InsertAsync(movie2);
 //     .Where(m => m.Title == "Interview")
 //     .ToListAsync();
 
-// WORKING
-var result = await midx
-     .Where(m => m.Actors.Any(a => a.Id == "2"))
-     .ToListAsync();
+// RETURN NOTHING
+//var result = await midx
+//     .Where(m => m.Actors.Any(a => a.Id == 1))
+//     .ToListAsync();
 
-// RETURN ONLY MOVIE 1
+// RETURN NOTHING
 //var result = await midx
 //     .Where(m => m.Actors.Any(a => a.Name == "Tom Cruise"))
 //     .ToListAsync();
@@ -113,9 +105,8 @@ Console.WriteLine("Completed");
 public class Movie
 {
     [RedisIdField]
-    [Indexed]
-    public string Id { get; set; }
-    [Searchable(Aggregatable = true)]
+    public int Id { get; set; }
+    [Searchable]
     public string Title { get; set; }
     [Indexed(CascadeDepth = 1)]
     public Actor SingleActor { get; set; }
@@ -128,7 +119,7 @@ public class Actor
 {
     [RedisIdField]
     [Indexed]
-    public string Id { get; set; }
-    [Searchable(Aggregatable = true)]
+    public int Id { get; set; }
+    [Searchable]
     public string Name { get; set; }
 }
